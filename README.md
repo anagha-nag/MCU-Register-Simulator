@@ -329,3 +329,27 @@ The main goal of this project is to provide a software-only environment for lear
 
 The simulator is designed to demonstrate how registers, peripherals, interrupts, APIs, and application-level software can interact within an MCU-oriented architecture.
 
+## Graphical User Interface
+
+The MCU Register Simulator includes an interactive graphical interface designed to provide a real-time view of the simulated microcontroller state and peripheral activity.
+
+### GUI Features
+
+* **Register Selection** — Select and inspect simulated MCU registers.
+* **Register Information** — Displays register name, address, and access permissions.
+* **Simulator Information** — Displays the MCU model, peripheral, register width, and GPIO configuration.
+* **Register Value** — Displays the current register value in hexadecimal format.
+* **32-bit Binary Representation** — Provides a bit-level view of the selected register.
+* **Register Bits** — Displays individual register bits and their current states.
+* **Register Fields** — Displays the configured fields within the selected register.
+* **Simulator State** — Provides information about the current simulator state.
+* **GPIO Pins** — Displays the state of the simulated GPIO pins.
+* **GPIO Peripheral Control** — Provides controls for peripheral mode, ready/error status, and GPIO pin operations including Set, Clear, and Toggle.
+* **Interrupt Monitor** — Displays interrupt-related activity and status.
+* **Interrupt Control** — Provides controls for interacting with simulated interrupts.
+* **Event Monitor** — Displays simulator events and event activity.
+* **Operation History** — Tracks operations performed within the simulator.
+* **Simulator Status** — Provides an overall view of the simulator status.
+
+The GUI is designed to make register-level and peripheral-level behavior easier to observe while developing and testing the simulator.
+
