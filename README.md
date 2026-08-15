@@ -331,7 +331,20 @@ The simulator is designed to demonstrate how registers, peripherals, interrupts,
 
 ## Graphical User Interface
 
-The MCU Register Simulator includes an interactive graphical interface designed to provide a real-time view of the simulated microcontroller state and peripheral activity.
+The MCU Register Simulator includes an interactive graphical interface for monitoring registers, GPIO, interrupts, events, and simulator state.
+
+### Register & Simulator View
+
+The register and simulator view provides information about the selected register, register address, access permissions, register value, 32-bit binary representation, register bits, register fields, and simulator state.
+
+![Register and Simulator View](docs/gui-registers.png)
+
+### GPIO, Interrupt & Monitoring View
+
+The peripheral and monitoring view provides GPIO controls, interrupt monitoring and control, event monitoring, operation history, and overall simulator status.
+
+![GPIO, Interrupt and Monitoring View](docs/gui-peripherals-monitoring.png)
+
 
 ### GUI Features
 
