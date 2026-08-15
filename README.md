@@ -274,16 +274,6 @@ OK
 
 ---
 
-## Graphical User Interface
-
-The MCU Register Simulator includes an interactive graphical interface for observing and interacting with the simulated MCU environment.
-
-The GUI provides a visual interface for working with simulated register and peripheral behavior.
-
-> A GUI screenshot will be added to this section.
-
----
-
 ## API Documentation
 
 The project includes documentation for the public MCU API.
