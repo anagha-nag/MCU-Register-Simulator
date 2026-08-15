@@ -1,6 +1,21 @@
+# Virtual environment
 .venv/
+
+# Python cache
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+
+# VS Code
 .vscode/
+
+# Saved simulator state files
 *.json
+
+# Python build files
+build/
+dist/
+*.egg-info/
+
+# Operating system files
+.DS_Store
+Thumbs.db

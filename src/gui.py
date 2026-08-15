@@ -16,8 +16,8 @@ class MCUSimulatorGUI:
 
         self.root = root
         self.root.title("MCU Register Simulator")
-        self.root.geometry("1100x750")
-        self.root.minsize(700, 500)
+        self.root.geometry("1150x800")
+        self.root.minsize(750, 550)
 
         # =====================================================
         # BACKEND
@@ -56,45 +56,72 @@ class MCUSimulatorGUI:
             }
         }
 
-        # =====================================================
-        # BUILD GUI
-        # =====================================================
-
+        # Build GUI first so widgets exist before
+        # event callbacks can update them.
         self._build_interface()
 
+        # Configure interrupt/event monitoring after
+        # the GUI widgets have been created.
+        self._configure_interrupt_monitoring()
+
+        # Initial display refresh.
+        self.update_all_displays()
+
     # =========================================================
-    # SCROLLABLE INTERFACE
+    # BUILD INTERFACE
     # =========================================================
 
     def _build_interface(self):
+        """Create the complete scrollable GUI."""
+
+        # -----------------------------------------------------
+        # TITLE
+        # -----------------------------------------------------
+
         title = ttk.Label(
             self.root,
             text="MCU REGISTER SIMULATOR",
             font=("Arial", 20, "bold")
         )
+
         title.pack(pady=10)
 
+        # -----------------------------------------------------
+        # OUTER FRAME
+        # -----------------------------------------------------
+
         outer_frame = ttk.Frame(self.root)
+
         outer_frame.pack(
             fill="both",
             expand=True
         )
 
+        # -----------------------------------------------------
+        # CANVAS
+        # -----------------------------------------------------
+
         self.canvas = tk.Canvas(
             outer_frame,
             highlightthickness=0
         )
+
         self.canvas.pack(
             side="left",
             fill="both",
             expand=True
         )
 
+        # -----------------------------------------------------
+        # MAIN SCROLLBAR
+        # -----------------------------------------------------
+
         scrollbar = ttk.Scrollbar(
             outer_frame,
             orient="vertical",
             command=self.canvas.yview
         )
+
         scrollbar.pack(
             side="right",
             fill="y"
@@ -103,6 +130,10 @@ class MCUSimulatorGUI:
         self.canvas.configure(
             yscrollcommand=scrollbar.set
         )
+
+        # -----------------------------------------------------
+        # SCROLLABLE CONTENT FRAME
+        # -----------------------------------------------------
 
         self.main_frame = ttk.Frame(
             self.canvas,
@@ -125,11 +156,13 @@ class MCUSimulatorGUI:
             self._resize_scrollable_frame
         )
 
+        # Mouse wheel
         self.canvas.bind_all(
             "<MouseWheel>",
             self._mouse_wheel
         )
 
+        # Linux mouse wheel
         self.canvas.bind_all(
             "<Button-4>",
             self._mouse_wheel_linux
@@ -158,6 +191,7 @@ class MCUSimulatorGUI:
             text="Select Register",
             padding=10
         )
+
         selector_frame.pack(
             fill="x",
             pady=5
@@ -174,6 +208,7 @@ class MCUSimulatorGUI:
             state="readonly",
             width=30
         )
+
         self.register_selector.pack(
             padx=10,
             pady=5
@@ -193,6 +228,7 @@ class MCUSimulatorGUI:
             text="Register Information",
             padding=10
         )
+
         register_frame.pack(
             fill="x",
             pady=5
@@ -211,6 +247,7 @@ class MCUSimulatorGUI:
             register_frame,
             text="GPIO_CTRL"
         )
+
         self.register_name_label.grid(
             row=0,
             column=1,
@@ -231,6 +268,7 @@ class MCUSimulatorGUI:
             register_frame,
             text="0x40000000"
         )
+
         self.address_label.grid(
             row=1,
             column=1,
@@ -251,6 +289,7 @@ class MCUSimulatorGUI:
             register_frame,
             text="RW"
         )
+
         self.access_label.grid(
             row=2,
             column=1,
@@ -267,6 +306,7 @@ class MCUSimulatorGUI:
             text="Simulator Information",
             padding=10
         )
+
         info_frame.pack(
             fill="x",
             pady=5
@@ -301,6 +341,7 @@ class MCUSimulatorGUI:
             text="Register Value",
             padding=10
         )
+
         value_frame.pack(
             fill="x",
             pady=5
@@ -311,6 +352,7 @@ class MCUSimulatorGUI:
             text="0x00000000",
             font=("Consolas", 18, "bold")
         )
+
         self.value_label.pack(
             pady=8
         )
@@ -324,6 +366,7 @@ class MCUSimulatorGUI:
             text="32-bit Binary Representation",
             padding=10
         )
+
         binary_frame.pack(
             fill="x",
             pady=5
@@ -334,6 +377,7 @@ class MCUSimulatorGUI:
             text="00000000000000000000000000000000",
             font=("Consolas", 13)
         )
+
         self.binary_label.pack(
             pady=8
         )
@@ -347,6 +391,7 @@ class MCUSimulatorGUI:
             text="Register Bits",
             padding=10
         )
+
         bit_frame.pack(
             fill="x",
             pady=5
@@ -359,7 +404,8 @@ class MCUSimulatorGUI:
                 bit_frame,
                 text="0",
                 width=3,
-                command=lambda b=bit: self.toggle_register_bit(b)
+                command=lambda b=bit:
+                self.toggle_register_bit(b)
             )
 
             button.grid(
@@ -411,6 +457,7 @@ class MCUSimulatorGUI:
             text="Register Fields",
             padding=10
         )
+
         self.field_frame.pack(
             fill="x",
             pady=5
@@ -425,6 +472,7 @@ class MCUSimulatorGUI:
             text="Write Register",
             padding=10
         )
+
         write_frame.pack(
             fill="x",
             pady=5
@@ -433,12 +481,15 @@ class MCUSimulatorGUI:
         ttk.Label(
             write_frame,
             text="Hex Value:"
-        ).pack(side="left")
+        ).pack(
+            side="left"
+        )
 
         self.write_entry = ttk.Entry(
             write_frame,
             width=20
         )
+
         self.write_entry.pack(
             side="left",
             padx=10
@@ -446,7 +497,8 @@ class MCUSimulatorGUI:
 
         self.write_entry.bind(
             "<Return>",
-            lambda event: self.write_register()
+            lambda event:
+            self.write_register()
         )
 
         ttk.Button(
@@ -462,13 +514,16 @@ class MCUSimulatorGUI:
         # REGISTER BUTTONS
         # =====================================================
 
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(
+        register_button_frame = ttk.Frame(
+            main_frame
+        )
+
+        register_button_frame.pack(
             pady=8
         )
 
         ttk.Button(
-            button_frame,
+            register_button_frame,
             text="READ",
             command=self.read_register
         ).pack(
@@ -477,7 +532,7 @@ class MCUSimulatorGUI:
         )
 
         ttk.Button(
-            button_frame,
+            register_button_frame,
             text="WRITE",
             command=self.write_register
         ).pack(
@@ -486,7 +541,7 @@ class MCUSimulatorGUI:
         )
 
         ttk.Button(
-            button_frame,
+            register_button_frame,
             text="RESET REGISTER",
             command=self.reset_register
         ).pack(
@@ -503,6 +558,7 @@ class MCUSimulatorGUI:
             text="Simulator State",
             padding=10
         )
+
         state_frame.pack(
             fill="x",
             pady=5
@@ -535,6 +591,7 @@ class MCUSimulatorGUI:
             text="GPIO Pins",
             padding=10
         )
+
         gpio_frame.pack(
             fill="x",
             pady=5
@@ -567,6 +624,7 @@ class MCUSimulatorGUI:
             text="GPIO Peripheral Controls",
             padding=10
         )
+
         gpio_control_frame.pack(
             fill="x",
             pady=5
@@ -579,6 +637,7 @@ class MCUSimulatorGUI:
         enable_frame = ttk.Frame(
             gpio_control_frame
         )
+
         enable_frame.pack(
             fill="x",
             pady=3
@@ -587,7 +646,9 @@ class MCUSimulatorGUI:
         ttk.Label(
             enable_frame,
             text="Peripheral:"
-        ).pack(side="left")
+        ).pack(
+            side="left"
+        )
 
         ttk.Button(
             enable_frame,
@@ -614,6 +675,7 @@ class MCUSimulatorGUI:
         mode_frame = ttk.Frame(
             gpio_control_frame
         )
+
         mode_frame.pack(
             fill="x",
             pady=3
@@ -622,7 +684,9 @@ class MCUSimulatorGUI:
         ttk.Label(
             mode_frame,
             text="Mode:"
-        ).pack(side="left")
+        ).pack(
+            side="left"
+        )
 
         self.gpio_mode_var = tk.StringVar(
             value="OUTPUT"
@@ -635,6 +699,7 @@ class MCUSimulatorGUI:
             state="readonly",
             width=12
         )
+
         self.gpio_mode_selector.pack(
             side="left",
             padx=10
@@ -649,30 +714,34 @@ class MCUSimulatorGUI:
         # GPIO STATUS
         # -----------------------------------------------------
 
-        status_frame = ttk.Frame(
+        gpio_status_frame = ttk.Frame(
             gpio_control_frame
         )
-        status_frame.pack(
+
+        gpio_status_frame.pack(
             fill="x",
             pady=3
         )
 
         ttk.Label(
-            status_frame,
+            gpio_status_frame,
             text="Ready:"
-        ).pack(side="left")
+        ).pack(
+            side="left"
+        )
 
         self.gpio_ready_label = ttk.Label(
-            status_frame,
+            gpio_status_frame,
             text="READY"
         )
+
         self.gpio_ready_label.pack(
             side="left",
             padx=5
         )
 
         ttk.Label(
-            status_frame,
+            gpio_status_frame,
             text="Error:"
         ).pack(
             side="left",
@@ -680,16 +749,17 @@ class MCUSimulatorGUI:
         )
 
         self.gpio_error_label = ttk.Label(
-            status_frame,
+            gpio_status_frame,
             text="OK"
         )
+
         self.gpio_error_label.pack(
             side="left",
             padx=5
         )
 
         ttk.Button(
-            status_frame,
+            gpio_status_frame,
             text="CLEAR ERROR",
             command=self.clear_gpio_error
         ).pack(
@@ -698,7 +768,7 @@ class MCUSimulatorGUI:
         )
 
         ttk.Button(
-            status_frame,
+            gpio_status_frame,
             text="RESET GPIO",
             command=self.reset_gpio
         ).pack(
@@ -713,6 +783,7 @@ class MCUSimulatorGUI:
         pin_control_frame = ttk.Frame(
             gpio_control_frame
         )
+
         pin_control_frame.pack(
             fill="x",
             pady=5
@@ -726,6 +797,7 @@ class MCUSimulatorGUI:
                 text=f"GPIO{pin}",
                 padding=4
             )
+
             pin_frame.grid(
                 row=0,
                 column=pin,
@@ -736,25 +808,37 @@ class MCUSimulatorGUI:
                 pin_frame,
                 text="SET",
                 width=7,
-                command=lambda p=pin: self.set_gpio_pin(p)
+                command=lambda p=pin:
+                self.set_gpio_pin(p)
             )
-            set_button.pack(pady=2)
+
+            set_button.pack(
+                pady=2
+            )
 
             clear_button = ttk.Button(
                 pin_frame,
                 text="CLEAR",
                 width=7,
-                command=lambda p=pin: self.clear_gpio_pin(p)
+                command=lambda p=pin:
+                self.clear_gpio_pin(p)
             )
-            clear_button.pack(pady=2)
+
+            clear_button.pack(
+                pady=2
+            )
 
             toggle_button = ttk.Button(
                 pin_frame,
                 text="TOGGLE",
                 width=7,
-                command=lambda p=pin: self.toggle_gpio_pin(p)
+                command=lambda p=pin:
+                self.toggle_gpio_pin(p)
             )
-            toggle_button.pack(pady=2)
+
+            toggle_button.pack(
+                pady=2
+            )
 
             self.gpio_control_buttons.append(
                 (
@@ -765,6 +849,229 @@ class MCUSimulatorGUI:
             )
 
         # =====================================================
+        # INTERRUPT MONITOR
+        # =====================================================
+
+        interrupt_frame = ttk.LabelFrame(
+            main_frame,
+            text="Interrupt Monitor",
+            padding=10
+        )
+
+        interrupt_frame.pack(
+            fill="x",
+            pady=5
+        )
+
+        self.interrupt_status = ttk.Label(
+            interrupt_frame,
+            text="No interrupt activity."
+        )
+
+        self.interrupt_status.pack(
+            anchor="w"
+        )
+
+        # =====================================================
+        # INTERRUPT CONTROLLER
+        # =====================================================
+
+        interrupt_control_frame = ttk.LabelFrame(
+            main_frame,
+            text="Interrupt Controller",
+            padding=10
+        )
+
+        interrupt_control_frame.pack(
+            fill="x",
+            pady=5
+        )
+
+        # Headers
+        ttk.Label(
+            interrupt_control_frame,
+            text="SOURCE",
+            width=20
+        ).grid(
+            row=0,
+            column=0,
+            padx=5
+        )
+
+        ttk.Label(
+            interrupt_control_frame,
+            text="ENABLED",
+            width=10
+        ).grid(
+            row=0,
+            column=1,
+            padx=5
+        )
+
+        ttk.Label(
+            interrupt_control_frame,
+            text="PENDING",
+            width=10
+        ).grid(
+            row=0,
+            column=2,
+            padx=5
+        )
+
+        ttk.Label(
+            interrupt_control_frame,
+            text="COUNT",
+            width=10
+        ).grid(
+            row=0,
+            column=3,
+            padx=5
+        )
+
+        ttk.Label(
+            interrupt_control_frame,
+            text="ACTION",
+            width=22
+        ).grid(
+            row=0,
+            column=4,
+            padx=5
+        )
+
+        self.interrupt_enabled_labels = []
+        self.interrupt_pending_labels = []
+        self.interrupt_count_labels = []
+        self.interrupt_service_buttons = []
+        self.interrupt_clear_buttons = []
+
+        # Rows for GPIO0-GPIO7
+        for pin in range(8):
+            row = pin + 1
+
+            ttk.Label(
+                interrupt_control_frame,
+                text=f"GPIO{pin}_CHANGE",
+                width=20
+            ).grid(
+                row=row,
+                column=0,
+                sticky="w",
+                padx=5,
+                pady=2
+            )
+
+            enabled_label = ttk.Label(
+                interrupt_control_frame,
+                text="NO",
+                width=10
+            )
+
+            enabled_label.grid(
+                row=row,
+                column=1
+            )
+
+            pending_label = ttk.Label(
+                interrupt_control_frame,
+                text="NO",
+                width=10
+            )
+
+            pending_label.grid(
+                row=row,
+                column=2
+            )
+
+            count_label = ttk.Label(
+                interrupt_control_frame,
+                text="0",
+                width=10
+            )
+
+            count_label.grid(
+                row=row,
+                column=3
+            )
+
+            action_frame = ttk.Frame(
+                interrupt_control_frame
+            )
+
+            action_frame.grid(
+                row=row,
+                column=4,
+                padx=5
+            )
+
+            service_button = ttk.Button(
+                action_frame,
+                text="SERVICE",
+                command=lambda p=pin:
+                self.service_gpio_interrupt(p)
+            )
+
+            service_button.pack(
+                side="left",
+                padx=2
+            )
+
+            clear_button = ttk.Button(
+                action_frame,
+                text="CLEAR",
+                command=lambda p=pin:
+                self.clear_gpio_interrupt(p)
+            )
+
+            clear_button.pack(
+                side="left",
+                padx=2
+            )
+
+            self.interrupt_enabled_labels.append(
+                enabled_label
+            )
+
+            self.interrupt_pending_labels.append(
+                pending_label
+            )
+
+            self.interrupt_count_labels.append(
+                count_label
+            )
+
+            self.interrupt_service_buttons.append(
+                service_button
+            )
+
+            self.interrupt_clear_buttons.append(
+                clear_button
+            )
+
+        # =====================================================
+        # EVENT MONITOR
+        # =====================================================
+
+        event_frame = ttk.LabelFrame(
+            main_frame,
+            text="Event Monitor",
+            padding=10
+        )
+
+        event_frame.pack(
+            fill="x",
+            pady=5
+        )
+
+        self.event_status = ttk.Label(
+            event_frame,
+            text="No event activity."
+        )
+
+        self.event_status.pack(
+            anchor="w"
+        )
+
+        # =====================================================
         # OPERATION HISTORY
         # =====================================================
 
@@ -773,6 +1080,7 @@ class MCUSimulatorGUI:
             text="Operation History",
             padding=10
         )
+
         history_frame.pack(
             fill="both",
             expand=True,
@@ -782,6 +1090,7 @@ class MCUSimulatorGUI:
         history_list_frame = ttk.Frame(
             history_frame
         )
+
         history_list_frame.pack(
             fill="both",
             expand=True
@@ -792,6 +1101,7 @@ class MCUSimulatorGUI:
             height=10,
             font=("Consolas", 10)
         )
+
         self.history_list.pack(
             side="left",
             fill="both",
@@ -803,6 +1113,7 @@ class MCUSimulatorGUI:
             orient="vertical",
             command=self.history_list.yview
         )
+
         history_scrollbar.pack(
             side="right",
             fill="y"
@@ -829,6 +1140,7 @@ class MCUSimulatorGUI:
             text="Simulator Status",
             padding=8
         )
+
         simulator_status_frame.pack(
             fill="x",
             pady=5
@@ -838,19 +1150,251 @@ class MCUSimulatorGUI:
             simulator_status_frame,
             text="Ready."
         )
+
         self.status_label.pack(
             anchor="w"
         )
 
-        # =====================================================
-        # INITIAL UPDATE
-        # =====================================================
+    # =========================================================
+    # INTERRUPT / EVENT MONITORING
+    # =========================================================
 
-        self.update_register_display()
-        self.update_field_display()
-        self.update_gpio_display()
-        self.update_gpio_status_display()
-        self.update_history_display()
+    def _configure_interrupt_monitoring(self):
+        """Configure handlers for all eight GPIO interrupts."""
+
+        for pin in range(8):
+            self.gpio.attach_pin_interrupt_handler(
+                pin,
+                self.handle_gpio_interrupt
+            )
+
+            self.gpio.enable_pin_interrupt(
+                pin
+            )
+
+        self.gpio.subscribe_event(
+            "GPIO_CHANGE",
+            self.handle_gpio_event
+        )
+
+        self.gpio.subscribe_event(
+            "REGISTER_WRITE",
+            self.handle_register_write_event
+        )
+
+    def handle_gpio_interrupt(self, event):
+        """Handle a serviced GPIO interrupt."""
+
+        if not event:
+            return
+
+        pin = event.get("pin")
+        state = event.get("state")
+
+        message = (
+            f"INTERRUPT: GPIO{pin} "
+            f"changed to {state}"
+        )
+
+        self.update_interrupt_status(
+            message
+        )
+
+        self.log_operation(
+            "IRQ",
+            f"GPIO{pin}",
+            f"state={state}"
+        )
+
+    def handle_gpio_event(self, event):
+        """Handle a general GPIO change event."""
+
+        if not event:
+            return
+
+        pin = event.get("pin")
+        state = event.get("state")
+
+        self.update_event_status(
+            f"GPIO EVENT: GPIO{pin} -> {state}"
+        )
+
+    def handle_register_write_event(self, event):
+        """Handle a register-write event."""
+
+        if not event:
+            return
+
+        address = event.get("address")
+        value = event.get("value")
+
+        if address is None or value is None:
+            return
+
+        self.update_event_status(
+            f"REGISTER EVENT: "
+            f"0x{address:08X} = "
+            f"0x{value:08X}"
+        )
+
+    # =========================================================
+    # INTERRUPT CONTROLLER DISPLAY
+    # =========================================================
+
+    def update_interrupt_controller_display(self):
+        """Refresh all GPIO interrupt statuses."""
+
+        for pin in range(8):
+
+            try:
+                enabled = (
+                    self.gpio.is_interrupt_enabled(
+                        pin
+                    )
+                )
+
+                pending = (
+                    self.gpio.is_interrupt_pending(
+                        pin
+                    )
+                )
+
+                count = (
+                    self.gpio.get_interrupt_count(
+                        pin
+                    )
+                )
+
+                self.interrupt_enabled_labels[
+                    pin
+                ].config(
+                    text="YES"
+                    if enabled
+                    else "NO"
+                )
+
+                self.interrupt_pending_labels[
+                    pin
+                ].config(
+                    text="YES"
+                    if pending
+                    else "NO"
+                )
+
+                self.interrupt_count_labels[
+                    pin
+                ].config(
+                    text=str(count)
+                )
+
+                self.interrupt_service_buttons[
+                    pin
+                ].config(
+                    state="normal"
+                    if (
+                        enabled
+                        and pending
+                    )
+                    else "disabled"
+                )
+
+                self.interrupt_clear_buttons[
+                    pin
+                ].config(
+                    state="normal"
+                    if pending
+                    else "disabled"
+                )
+
+            except (
+                ValueError,
+                AttributeError
+            ):
+                self.interrupt_enabled_labels[
+                    pin
+                ].config(
+                    text="ERROR"
+                )
+
+                self.interrupt_pending_labels[
+                    pin
+                ].config(
+                    text="ERROR"
+                )
+
+                self.interrupt_count_labels[
+                    pin
+                ].config(
+                    text="-"
+                )
+
+    # =========================================================
+    # SERVICE INTERRUPT
+    # =========================================================
+
+    def service_gpio_interrupt(self, pin):
+        """Service a pending GPIO interrupt."""
+
+        try:
+            serviced = self.gpio.service_interrupt(
+                pin
+            )
+
+            self.update_interrupt_controller_display()
+
+            if serviced:
+                self.log_operation(
+                    "SERVICE",
+                    f"GPIO{pin}_CHANGE"
+                )
+
+                self.set_status(
+                    f"GPIO{pin} interrupt serviced."
+                )
+
+            else:
+                self.set_status(
+                    f"No serviceable interrupt "
+                    f"for GPIO{pin}."
+                )
+
+        except (
+            ValueError,
+            RuntimeError
+        ) as error:
+
+            self.set_status(
+                f"INTERRUPT ERROR: {error}"
+            )
+
+    # =========================================================
+    # CLEAR INTERRUPT
+    # =========================================================
+
+    def clear_gpio_interrupt(self, pin):
+        """Clear a pending GPIO interrupt."""
+
+        try:
+            self.gpio.clear_interrupt(
+                pin
+            )
+
+            self.update_interrupt_controller_display()
+
+            self.log_operation(
+                "CLEAR_IRQ",
+                f"GPIO{pin}_CHANGE"
+            )
+
+            self.set_status(
+                f"GPIO{pin} interrupt cleared."
+            )
+
+        except ValueError as error:
+
+            self.set_status(
+                f"INTERRUPT ERROR: {error}"
+            )
 
     # =========================================================
     # SCROLLING
@@ -886,11 +1430,35 @@ class MCUSimulatorGUI:
             )
 
     # =========================================================
-    # STATUS MESSAGE
+    # GENERAL DISPLAY UPDATE
+    # =========================================================
+
+    def update_all_displays(self):
+        """Refresh every dynamic GUI section."""
+
+        self.update_register_display()
+        self.update_field_display()
+        self.update_gpio_display()
+        self.update_gpio_status_display()
+        self.update_history_display()
+        self.update_interrupt_controller_display()
+
+    # =========================================================
+    # STATUS
     # =========================================================
 
     def set_status(self, message):
         self.status_label.config(
+            text=message
+        )
+
+    def update_interrupt_status(self, message):
+        self.interrupt_status.config(
+            text=message
+        )
+
+    def update_event_status(self, message):
+        self.event_status.config(
             text=message
         )
 
@@ -933,10 +1501,11 @@ class MCUSimulatorGUI:
         )
 
         for entry in self.logger.get_history():
+
             line = (
                 f"{entry['time']}  "
-                f"{entry['operation']:<8} "
-                f"{entry['target']:<20}"
+                f"{entry['operation']:<10} "
+                f"{entry['target']:<22}"
             )
 
             if entry["value"] is not None:
@@ -947,7 +1516,9 @@ class MCUSimulatorGUI:
                 line
             )
 
-        self.history_list.yview_moveto(1.0)
+        self.history_list.yview_moveto(
+            1.0
+        )
 
     def clear_history(self):
         self.logger.clear()
@@ -972,9 +1543,15 @@ class MCUSimulatorGUI:
 
         return self.registers[name]
 
-    def on_register_selected(self, event=None):
+    def on_register_selected(
+        self,
+        event=None
+    ):
         register_name = self.register_var.get()
-        register_info = self.get_selected_register()
+
+        register_info = (
+            self.get_selected_register()
+        )
 
         self.register_name_label.config(
             text=register_name
@@ -992,7 +1569,8 @@ class MCUSimulatorGUI:
         self.update_field_display()
 
         self.set_status(
-            f"Selected register: {register_name}"
+            f"Selected register: "
+            f"{register_name}"
         )
 
     # =========================================================
@@ -1001,7 +1579,10 @@ class MCUSimulatorGUI:
 
     def update_register_display(self):
         register_name = self.register_var.get()
-        register_info = self.get_selected_register()
+
+        register_info = (
+            self.get_selected_register()
+        )
 
         address = register_info["address"]
         access = register_info["access"]
@@ -1018,7 +1599,9 @@ class MCUSimulatorGUI:
             text=access
         )
 
+        # WRITE-ONLY register
         if access == "WO":
+
             self.value_label.config(
                 text="WRITE-ONLY"
             )
@@ -1028,9 +1611,11 @@ class MCUSimulatorGUI:
             )
 
             self.update_bit_display()
+
             return
 
         try:
+
             value = (
                 self.gpio
                 .get_register_map()
@@ -1046,6 +1631,7 @@ class MCUSimulatorGUI:
             )
 
         except PermissionError:
+
             self.value_label.config(
                 text="READ NOT AVAILABLE"
             )
@@ -1061,20 +1647,27 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def update_bit_display(self):
-        register_info = self.get_selected_register()
+        register_info = (
+            self.get_selected_register()
+        )
 
         address = register_info["address"]
         access = register_info["access"]
 
+        # WRITE-ONLY
         if access == "WO":
+
             for button in self.bit_buttons:
+
                 button.config(
                     text="-",
                     state="disabled"
                 )
+
             return
 
         try:
+
             value = (
                 self.gpio
                 .get_register_map()
@@ -1082,16 +1675,20 @@ class MCUSimulatorGUI:
             )
 
         except PermissionError:
+
             for button in self.bit_buttons:
+
                 button.config(
                     text="-",
                     state="disabled"
                 )
+
             return
 
         for index, bit in enumerate(
             range(31, -1, -1)
         ):
+
             bit_value = (
                 value >> bit
             ) & 1
@@ -1101,10 +1698,13 @@ class MCUSimulatorGUI:
             )
 
             if access == "RO":
+
                 self.bit_buttons[index].config(
                     state="disabled"
                 )
+
             else:
+
                 self.bit_buttons[index].config(
                     state="normal"
                 )
@@ -1114,29 +1714,35 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def toggle_register_bit(self, bit):
-        register_info = self.get_selected_register()
+        register_info = (
+            self.get_selected_register()
+        )
 
         address = register_info["address"]
         access = register_info["access"]
 
         if access != "RW":
+
             self.set_status(
-                "ERROR: This register cannot be modified."
+                "ERROR: This register "
+                "cannot be modified."
             )
+
             return
 
         try:
+
             register = (
                 self.gpio
                 .get_register_map()
                 .registers[address]
             )
 
-            register.toggle_bit(bit)
+            register.toggle_bit(
+                bit
+            )
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "BIT",
@@ -1148,8 +1754,10 @@ class MCUSimulatorGUI:
             )
 
         except PermissionError:
+
             self.set_status(
-                "ERROR: Write operation not allowed."
+                "ERROR: Write operation "
+                "not allowed."
             )
 
     # =========================================================
@@ -1157,10 +1765,15 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def update_field_display(self):
-        for widget in self.field_frame.winfo_children():
+
+        for widget in (
+            self.field_frame.winfo_children()
+        ):
             widget.destroy()
 
-        register_info = self.get_selected_register()
+        register_info = (
+            self.get_selected_register()
+        )
 
         address = register_info["address"]
         access = register_info["access"]
@@ -1172,14 +1785,18 @@ class MCUSimulatorGUI:
         )
 
         if not register.fields:
+
             ttk.Label(
                 self.field_frame,
-                text="This register has no named fields."
+                text="This register has "
+                     "no named fields."
             ).pack(
                 anchor="w"
             )
+
             return
 
+        # Header
         ttk.Label(
             self.field_frame,
             text="FIELD",
@@ -1224,11 +1841,20 @@ class MCUSimulatorGUI:
             padx=5
         )
 
-        for row, (field_name, field) in enumerate(
+        for row, (
+            field_name,
+            field
+        ) in enumerate(
             register.fields.items(),
             start=1
         ):
-            bit_msb = field.lsb + field.width - 1
+
+            bit_msb = (
+                field.lsb
+                + field.width
+                - 1
+            )
+
             bit_lsb = field.lsb
 
             ttk.Label(
@@ -1255,10 +1881,15 @@ class MCUSimulatorGUI:
             )
 
             try:
-                current_value = register.read_field(
-                    field_name
+
+                current_value = (
+                    register.read_field(
+                        field_name
+                    )
                 )
+
             except PermissionError:
+
                 current_value = "N/A"
 
             value_var = tk.StringVar(
@@ -1270,6 +1901,7 @@ class MCUSimulatorGUI:
                 textvariable=value_var,
                 width=12
             )
+
             value_entry.grid(
                 row=row,
                 column=2,
@@ -1308,6 +1940,7 @@ class MCUSimulatorGUI:
             )
 
             if access != "RW":
+
                 value_entry.config(
                     state="disabled"
                 )
@@ -1321,17 +1954,27 @@ class MCUSimulatorGUI:
         field_name,
         value_var
     ):
-        register_info = self.get_selected_register()
+        register_info = (
+            self.get_selected_register()
+        )
 
         address = register_info["address"]
 
         try:
-            value_text = value_var.get().strip()
+
+            value_text = (
+                value_var
+                .get()
+                .strip()
+            )
 
             if not value_text:
+
                 self.set_status(
-                    f"ERROR: Enter a value for {field_name}."
+                    f"ERROR: Enter a value "
+                    f"for {field_name}."
                 )
+
                 return
 
             value = int(
@@ -1350,46 +1993,55 @@ class MCUSimulatorGUI:
                 value
             )
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "FIELD",
-                f"{self.register_var.get()}.{field_name}",
+                f"{self.register_var.get()}"
+                f".{field_name}",
                 str(value)
             )
 
             self.set_status(
-                f"{field_name} updated to {value}."
+                f"{field_name} "
+                f"updated to {value}."
             )
 
-        except ValueError as error:
-            self.set_status(
-                f"ERROR: {error}"
-            )
+        except (
+            ValueError,
+            TypeError
+        ) as error:
 
-        except TypeError as error:
             self.set_status(
                 f"ERROR: {error}"
             )
 
         except PermissionError:
+
             self.set_status(
-                "ERROR: This register cannot be modified."
+                "ERROR: This register "
+                "cannot be modified."
             )
 
     # =========================================================
-    # READ
+    # READ REGISTER
     # =========================================================
 
     def read_register(self):
-        try:
-            register_info = self.get_selected_register()
 
-            register_name = self.register_var.get()
-            address = register_info["address"]
+        try:
+
+            register_info = (
+                self.get_selected_register()
+            )
+
+            register_name = (
+                self.register_var.get()
+            )
+
+            address = (
+                register_info["address"]
+            )
 
             value = (
                 self.gpio
@@ -1397,10 +2049,7 @@ class MCUSimulatorGUI:
                 .read(address)
             )
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "READ",
@@ -1413,50 +2062,71 @@ class MCUSimulatorGUI:
             )
 
         except Exception as error:
+
             self.set_status(
                 f"ERROR: {error}"
             )
 
     # =========================================================
-    # WRITE
+    # WRITE REGISTER
     # =========================================================
 
     def write_register(self):
-        text = self.write_entry.get().strip()
+
+        text = (
+            self.write_entry
+            .get()
+            .strip()
+        )
 
         if not text:
+
             self.set_status(
-                "ERROR: Enter a hexadecimal value."
+                "ERROR: Enter a "
+                "hexadecimal value."
             )
+
             return
 
         try:
+
             value = int(
                 text,
                 16
             )
 
-            if value < 0 or value > 0xFFFFFFFF:
+            if (
+                value < 0
+                or value > 0xFFFFFFFF
+            ):
+
                 self.set_status(
-                    "ERROR: Value must be between "
-                    "0x00000000 and 0xFFFFFFFF."
+                    "ERROR: Value must be "
+                    "between "
+                    "0x00000000 and "
+                    "0xFFFFFFFF."
                 )
+
                 return
 
-            register_info = self.get_selected_register()
+            register_info = (
+                self.get_selected_register()
+            )
 
-            register_name = self.register_var.get()
-            address = register_info["address"]
+            register_name = (
+                self.register_var.get()
+            )
+
+            address = (
+                register_info["address"]
+            )
 
             self.gpio.get_register_map().write(
                 address,
                 value
             )
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "WRITE",
@@ -1465,17 +2135,22 @@ class MCUSimulatorGUI:
             )
 
             self.set_status(
-                f"Write successful: 0x{value:08X}"
+                f"Write successful: "
+                f"0x{value:08X}"
             )
 
         except PermissionError:
+
             self.set_status(
-                "ERROR: This register is read-only."
+                "ERROR: This register "
+                "is read-only."
             )
 
         except ValueError:
+
             self.set_status(
-                "ERROR: Enter a valid hexadecimal value."
+                "ERROR: Enter a valid "
+                "hexadecimal value."
             )
 
     # =========================================================
@@ -1483,20 +2158,26 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def reset_register(self):
-        register_info = self.get_selected_register()
 
-        register_name = self.register_var.get()
-        address = register_info["address"]
+        register_info = (
+            self.get_selected_register()
+        )
+
+        register_name = (
+            self.register_var.get()
+        )
+
+        address = (
+            register_info["address"]
+        )
 
         try:
+
             self.gpio.get_register_map().reset(
                 address
             )
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "RESET",
@@ -1508,6 +2189,7 @@ class MCUSimulatorGUI:
             )
 
         except Exception as error:
+
             self.set_status(
                 f"ERROR: {error}"
             )
@@ -1517,19 +2199,24 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def save_state(self):
-        filename = filedialog.asksaveasfilename(
-            title="Save Simulator State",
-            defaultextension=".json",
-            filetypes=[
-                ("JSON files", "*.json"),
-                ("All files", "*.*")
-            ]
+
+        filename = (
+            filedialog
+            .asksaveasfilename(
+                title="Save Simulator State",
+                defaultextension=".json",
+                filetypes=[
+                    ("JSON files", "*.json"),
+                    ("All files", "*.*")
+                ]
+            )
         )
 
         if not filename:
             return
 
         try:
+
             self.state_manager.save_state(
                 self.gpio,
                 filename
@@ -1545,8 +2232,10 @@ class MCUSimulatorGUI:
             )
 
         except OSError as error:
+
             self.set_status(
-                f"ERROR saving state: {error}"
+                f"ERROR saving state: "
+                f"{error}"
             )
 
     # =========================================================
@@ -1554,27 +2243,29 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def load_state(self):
-        filename = filedialog.askopenfilename(
-            title="Load Simulator State",
-            filetypes=[
-                ("JSON files", "*.json"),
-                ("All files", "*.*")
-            ]
+
+        filename = (
+            filedialog
+            .askopenfilename(
+                title="Load Simulator State",
+                filetypes=[
+                    ("JSON files", "*.json"),
+                    ("All files", "*.*")
+                ]
+            )
         )
 
         if not filename:
             return
 
         try:
+
             self.state_manager.load_state(
                 self.gpio,
                 filename
             )
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "LOAD",
@@ -1590,8 +2281,10 @@ class MCUSimulatorGUI:
             ValueError,
             KeyError
         ) as error:
+
             self.set_status(
-                f"ERROR loading state: {error}"
+                f"ERROR loading state: "
+                f"{error}"
             )
 
     # =========================================================
@@ -1599,7 +2292,9 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def update_gpio_display(self):
+
         try:
+
             enabled = (
                 self.gpio
                 .get_register_map()
@@ -1611,28 +2306,51 @@ class MCUSimulatorGUI:
             )
 
         except PermissionError:
+
             enabled = False
 
         if not enabled:
+
             for pin in range(8):
-                self.pin_labels[pin].config(
-                    text=f"GPIO{pin}: DISABLED"
+
+                self.pin_labels[
+                    pin
+                ].config(
+                    text=f"GPIO{pin}: "
+                         f"DISABLED"
                 )
+
             return
 
         for pin in range(8):
+
             try:
-                state = self.gpio.read_pin(pin)
+
+                state = (
+                    self.gpio.read_pin(pin)
+                )
 
                 if state:
-                    text = f"GPIO{pin}: HIGH"
+
+                    text = (
+                        f"GPIO{pin}: HIGH"
+                    )
+
                 else:
-                    text = f"GPIO{pin}: LOW"
+
+                    text = (
+                        f"GPIO{pin}: LOW"
+                    )
 
             except RuntimeError:
-                text = f"GPIO{pin}: ERROR"
 
-            self.pin_labels[pin].config(
+                text = (
+                    f"GPIO{pin}: ERROR"
+                )
+
+            self.pin_labels[
+                pin
+            ].config(
                 text=text
             )
 
@@ -1641,31 +2359,49 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def update_gpio_status_display(self):
+
         try:
-            ready = self.gpio.is_ready()
-            error = self.gpio.has_error()
+
+            ready = (
+                self.gpio.is_ready()
+            )
+
+            error = (
+                self.gpio.has_error()
+            )
 
             self.gpio_ready_label.config(
-                text="READY"
-                if ready
-                else "DISABLED"
+                text=(
+                    "READY"
+                    if ready
+                    else "DISABLED"
+                )
             )
 
             self.gpio_error_label.config(
-                text="ERROR"
-                if error
-                else "OK"
+                text=(
+                    "ERROR"
+                    if error
+                    else "OK"
+                )
             )
 
-            for buttons in self.gpio_control_buttons:
+            for buttons in (
+                self.gpio_control_buttons
+            ):
+
                 for button in buttons:
+
                     button.config(
-                        state="normal"
-                        if ready
-                        else "disabled"
+                        state=(
+                            "normal"
+                            if ready
+                            else "disabled"
+                        )
                     )
 
         except Exception:
+
             self.gpio_ready_label.config(
                 text="UNKNOWN"
             )
@@ -1679,13 +2415,12 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def enable_gpio(self):
+
         try:
+
             self.gpio.enable()
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "ENABLE",
@@ -1697,6 +2432,7 @@ class MCUSimulatorGUI:
             )
 
         except Exception as error:
+
             self.set_status(
                 f"GPIO ERROR: {error}"
             )
@@ -1706,13 +2442,12 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def disable_gpio(self):
+
         try:
+
             self.gpio.disable()
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "DISABLE",
@@ -1724,6 +2459,7 @@ class MCUSimulatorGUI:
             )
 
         except Exception as error:
+
             self.set_status(
                 f"GPIO ERROR: {error}"
             )
@@ -1732,42 +2468,50 @@ class MCUSimulatorGUI:
     # GPIO MODE
     # =========================================================
 
-    def on_gpio_mode_changed(self, event=None):
-        mode = self.gpio_mode_var.get()
+    def on_gpio_mode_changed(
+        self,
+        event=None
+    ):
+
+        mode = (
+            self.gpio_mode_var
+            .get()
+        )
 
         try:
+
             if mode == "OUTPUT":
+
                 self.gpio.configure_output()
 
             elif mode == "INPUT":
+
                 self.gpio.configure_input()
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.set_status(
-                f"GPIO mode changed to {mode}."
+                f"GPIO mode changed "
+                f"to {mode}."
             )
 
         except Exception as error:
+
             self.set_status(
                 f"GPIO ERROR: {error}"
             )
 
     # =========================================================
-    # SET GPIO PIN
+    # SET GPIO
     # =========================================================
 
     def set_gpio_pin(self, pin):
+
         try:
+
             self.gpio.set_pin(pin)
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "SET",
@@ -1783,24 +2527,26 @@ class MCUSimulatorGUI:
             ValueError,
             TypeError
         ) as error:
+
             self.update_gpio_status_display()
+
+            self.update_interrupt_controller_display()
 
             self.set_status(
                 f"GPIO ERROR: {error}"
             )
 
     # =========================================================
-    # CLEAR GPIO PIN
+    # CLEAR GPIO
     # =========================================================
 
     def clear_gpio_pin(self, pin):
+
         try:
+
             self.gpio.clear_pin(pin)
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "CLEAR",
@@ -1816,24 +2562,26 @@ class MCUSimulatorGUI:
             ValueError,
             TypeError
         ) as error:
+
             self.update_gpio_status_display()
+
+            self.update_interrupt_controller_display()
 
             self.set_status(
                 f"GPIO ERROR: {error}"
             )
 
     # =========================================================
-    # TOGGLE GPIO PIN
+    # TOGGLE GPIO
     # =========================================================
 
     def toggle_gpio_pin(self, pin):
+
         try:
+
             self.gpio.toggle_pin(pin)
 
-            self.update_register_display()
-            self.update_field_display()
-            self.update_gpio_display()
-            self.update_gpio_status_display()
+            self.update_all_displays()
 
             self.log_operation(
                 "TOGGLE",
@@ -1849,7 +2597,10 @@ class MCUSimulatorGUI:
             ValueError,
             TypeError
         ) as error:
+
             self.update_gpio_status_display()
+
+            self.update_interrupt_controller_display()
 
             self.set_status(
                 f"GPIO ERROR: {error}"
@@ -1860,12 +2611,10 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def clear_gpio_error(self):
+
         self.gpio.clear_error()
 
-        self.update_register_display()
-        self.update_field_display()
-        self.update_gpio_display()
-        self.update_gpio_status_display()
+        self.update_all_displays()
 
         self.set_status(
             "GPIO error cleared."
@@ -1876,13 +2625,21 @@ class MCUSimulatorGUI:
     # =========================================================
 
     def reset_gpio(self):
+
         self.gpio = GPIO()
         self.gpio.configure_output()
 
-        self.update_register_display()
-        self.update_field_display()
-        self.update_gpio_display()
-        self.update_gpio_status_display()
+        self._configure_interrupt_monitoring()
+
+        self.update_interrupt_status(
+            "No interrupt activity."
+        )
+
+        self.update_event_status(
+            "No event activity."
+        )
+
+        self.update_all_displays()
 
         self.log_operation(
             "RESET",

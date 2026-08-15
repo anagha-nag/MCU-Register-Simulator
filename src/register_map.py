@@ -1,97 +1,153 @@
-from access import RegisterAccess
 from register import Register32
-from register_field import RegisterField
+from access import RegisterAccess
+
+from errors import RegisterNotFoundError
 
 
 class RegisterMap:
-    """Simulates the MCU memory-mapped register space."""
+    """Maps MCU register addresses to Register32 objects."""
 
     def __init__(self):
-        self.registers = {
-            0x40000000: Register32(
-                "GPIO_CTRL",
-                reset_value=0x00000000,
-                access=RegisterAccess.READ_WRITE,
-                fields=[
-                    RegisterField("ENABLE", 0, 1),
-                    RegisterField("MODE", 4, 4),
-                ]
-            ),
+        self.registers = {}
 
-            0x40000004: Register32(
-                "GPIO_DATA",
-                reset_value=0x00000000,
-                access=RegisterAccess.READ_WRITE
-            ),
+        self._create_default_registers()
 
-            0x40000008: Register32(
-                "GPIO_STATUS",
-                reset_value=0x00000001,
-                access=RegisterAccess.READ_ONLY,
-                fields=[
-                    RegisterField("READY", 0, 1),
-                    RegisterField("ERROR", 1, 1),
-                ]
-            ),
+    # =========================================================
+    # DEFAULT REGISTERS
+    # =========================================================
 
-            0x4000000C: Register32(
-                "GPIO_CONFIG",
-                reset_value=0x00000010,
-                access=RegisterAccess.READ_WRITE
-            ),
-
-            0x40000010: Register32(
-                "GPIO_COMMAND",
-                reset_value=0x00000000,
-                access=RegisterAccess.WRITE_ONLY
-            ),
-        }
-
-    def read(self, address):
-        self._validate_address(address)
-        return self.registers[address].read()
-
-    def write(self, address, value):
-        self._validate_address(address)
-        self.registers[address].write(value)
-
-    def reset(self, address):
-        self._validate_address(address)
-        self.registers[address].reset()
-
-    def set_bit(self, address, bit):
-        self._validate_address(address)
-        self.registers[address].set_bit(bit)
-
-    def clear_bit(self, address, bit):
-        self._validate_address(address)
-        self.registers[address].clear_bit(bit)
-
-    def toggle_bit(self, address, bit):
-        self._validate_address(address)
-        self.registers[address].toggle_bit(bit)
-
-    def get_register_name(self, address):
-        self._validate_address(address)
-        return self.registers[address].name
-
-    def read_field(self, address, field_name):
-        self._validate_address(address)
-        return self.registers[address].read_field(field_name)
-
-    def write_field(self, address, field_name, field_value):
-        self._validate_address(address)
-        self.registers[address].write_field(
-            field_name,
-            field_value
+    def _create_default_registers(self):
+        gpio_ctrl = Register32(
+            "GPIO_CTRL",
+            reset_value=0x00000000,
+            access=RegisterAccess.READ_WRITE
         )
 
-    def get_access(self, address):
-        self._validate_address(address)
-        return self.registers[address].access
+        gpio_ctrl.add_field(
+            "ENABLE",
+            0,
+            1
+        )
 
-    def _validate_address(self, address):
+        gpio_ctrl.add_field(
+            "MODE",
+            4,
+            4
+        )
+
+        gpio_data = Register32(
+            "GPIO_DATA",
+            reset_value=0x00000000,
+            access=RegisterAccess.READ_WRITE
+        )
+
+        gpio_status = Register32(
+            "GPIO_STATUS",
+            reset_value=0x00000001,
+            access=RegisterAccess.READ_ONLY
+        )
+
+        gpio_status.add_field(
+            "READY",
+            0,
+            1
+        )
+
+        gpio_status.add_field(
+            "ERROR",
+            1,
+            1
+        )
+
+        gpio_config = Register32(
+            "GPIO_CONFIG",
+            reset_value=0x00000010,
+            access=RegisterAccess.READ_WRITE
+        )
+
+        gpio_command = Register32(
+            "GPIO_COMMAND",
+            reset_value=0x00000000,
+            access=RegisterAccess.WRITE_ONLY
+        )
+
+        self.registers = {
+            0x40000000: gpio_ctrl,
+            0x40000004: gpio_data,
+            0x40000008: gpio_status,
+            0x4000000C: gpio_config,
+            0x40000010: gpio_command
+        }
+
+    # =========================================================
+    # LOOKUP
+    # =========================================================
+
+    def _get_register(self, address):
         if address not in self.registers:
-            raise ValueError(
-                f"Invalid register address: 0x{address:08X}"
+            raise RegisterNotFoundError(
+                f"No register exists at "
+                f"address 0x{address:08X}."
             )
+
+        return self.registers[address]
+
+    def get_register_name(self, address):
+        return self._get_register(address).name
+
+    # =========================================================
+    # READ / WRITE
+    # =========================================================
+
+    def read(self, address):
+        return self._get_register(address).read()
+
+    def write(self, address, value):
+        self._get_register(address).write(value)
+
+    def reset(self, address):
+        self._get_register(address).reset()
+
+    # =========================================================
+    # BITS
+    # =========================================================
+
+    def set_bit(self, address, bit):
+        self._get_register(address).set_bit(bit)
+
+    def clear_bit(self, address, bit):
+        self._get_register(address).clear_bit(bit)
+
+    def toggle_bit(self, address, bit):
+        self._get_register(address).toggle_bit(bit)
+
+    def is_bit_set(self, address, bit):
+        return self._get_register(
+            address
+        ).is_bit_set(bit)
+
+    # =========================================================
+    # FIELDS
+    # =========================================================
+
+    def read_field(
+        self,
+        address,
+        field_name
+    ):
+        return self._get_register(
+            address
+        ).read_field(field_name)
+
+    def write_field(
+        self,
+        address,
+        field_name,
+        value
+    ):
+        self._get_register(
+            address
+        ).write_field(
+            field_name,
+            value
+        )

@@ -1,34 +1,61 @@
 # MCU Register Simulator
 
-A software-based 32-bit MCU register and GPIO simulator built with Python.
+A software-based 32-bit microcontroller register and GPIO simulator
+developed in Python.
 
-## Features
+The project models memory-mapped registers, register fields, GPIO
+behavior, interrupts, events, access permissions, state persistence,
+and an interactive debugging interface.
 
-- 32-bit register model
-- Memory-mapped register architecture
-- Register fields and bit masks
-- Read/Write access permissions
+---
+
+## Project Overview
+
+The MCU Register Simulator provides a software environment for
+experimenting with concepts commonly used in embedded software
+development.
+
+Instead of requiring physical MCU hardware, the project simulates:
+
+- 32-bit memory-mapped registers
+- Register fields and bit manipulation
+- Read-only, write-only, and read/write access
 - Register reset behavior
-- GPIO peripheral simulation
-- Interactive GUI
-- Bit-level manipulation
-- Field-level editing
+- GPIO peripheral operation
+- GPIO input/output modes
+- GPIO pin state changes
+- Interrupt generation and servicing
+- Event notifications
 - Operation history
-- Save/load simulator state
-- Automated unit testing
+- Simulator state save/load
+- Custom error handling
+- A high-level MCU API
+- An interactive graphical interface
+
+---
 
 ## Architecture
 
 ```text
-GUI
- |
- v
-GPIO
- |
- v
-RegisterMap
- |
- v
-Register32
- |
- +--> RegisterField
+                    MCU Register Simulator
+                             |
+              +--------------+--------------+
+              |                             |
+              v                             v
+             GUI                         MCU API
+              |                             |
+              +--------------+--------------+
+                             |
+                             v
+                            GPIO
+                             |
+            +----------------+----------------+
+            |                |                |
+            v                v                v
+       RegisterMap    EventManager    InterruptController
+            |
+            v
+        Register32
+            |
+            v
+      RegisterField
