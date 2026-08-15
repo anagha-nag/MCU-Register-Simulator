@@ -341,7 +341,7 @@ The register and simulator view provides information about the selected register
 
 ### GPIO, Interrupt & Monitoring View
 
-The peripheral and monitoring view provides GPIO controls, interrupt monitoring and control, event monitoring, operation history, and overall simulator status.
+The peripheral and monitoring view provides GPIO controls, interrupt monitoring and control, event monitoring, operation history, and overall simulator status
 
 ![GPIO, Interrupt and Monitoring View](docs/gui-peripherals-monitoring.png)
 
